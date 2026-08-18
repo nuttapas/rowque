@@ -289,19 +289,22 @@ CREATE OR REPLACE FUNCTION manual_call_queue(
 DECLARE
   v_entry queue_entries%ROWTYPE;
 BEGIN
-  SELECT * INTO v_entry
+  -- Lock row ก่อนตรวจสอบสถานะ
+  SELECT *
+  INTO v_entry
   FROM queue_entries
-  WHERE id = p_entry_id;
-  
-  IF v_entry.id IS NULL THEN
+  WHERE id = p_entry_id
+  FOR UPDATE;
+
+  IF NOT FOUND THEN
     RETURN jsonb_build_object(
       'success', false,
       'code', 'ENTRY_NOT_FOUND',
       'message', 'ไม่พบข้อมูลคิว'
     );
   END IF;
-  
-  -- Allow manual selection of waiting, selected, or previously cancelled entries
+
+  -- สามารถเรียกได้เฉพาะ waiting / selected / cancelled
   IF v_entry.status NOT IN ('waiting', 'selected', 'cancelled') THEN
     RETURN jsonb_build_object(
       'success', false,
@@ -309,30 +312,44 @@ BEGIN
       'message', 'ไม่สามารถเรียกคิวในสถานะนี้ได้'
     );
   END IF;
-  
-  -- Update to called status
+
+  -- เรียกคิว
   UPDATE queue_entries
-  SET 
+  SET
     status = 'called',
     called_at = NOW(),
-    called_by = auth.uid()
+    called_by = auth.uid(),
+    updated_at = NOW()
   WHERE id = p_entry_id;
-  
-  -- Log audit
-  INSERT INTO audit_logs (actor_id, action, entity_type, entity_id, metadata)
+
+  -- Audit log
+  INSERT INTO audit_logs (
+    actor_id,
+    action,
+    entity_type,
+    entity_id,
+    metadata
+  )
   VALUES (
     auth.uid(),
     'manual_call',
     'queue_entry',
     p_entry_id,
     jsonb_build_object(
-      'queue_number', v_entry.queue_number
+      'queue_number', v_entry.queue_number,
+      'previous_status', v_entry.status
     )
   );
-  
+
   RETURN jsonb_build_object(
     'success', true,
-    'message', 'เรียกคิวสำเร็จ'
+    'message', 'เรียกคิวสำเร็จ',
+    'data', jsonb_build_object(
+      'id', v_entry.id,
+      'queue_number', v_entry.queue_number,
+      'player_name', v_entry.player_name,
+      'position', v_entry.position
+    )
   );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
