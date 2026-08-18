@@ -37,7 +37,7 @@ export async function randomSelectQueue(
 
   return {
     success: true,
-    data: (data ?? []) as QueueEntry[],
+    data: (data ?? []) as unknown as QueueEntry[],
   };
 }
 
