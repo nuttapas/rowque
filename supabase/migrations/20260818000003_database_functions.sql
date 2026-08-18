@@ -96,73 +96,85 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- Function to random select queue entry (atomic with race condition protection)
 CREATE OR REPLACE FUNCTION random_select_queue(
   p_round_id UUID,
-  p_position queue_position
+  p_position queue_position,
+  p_count INTEGER DEFAULT 1
 ) RETURNS JSONB AS $$
 DECLARE
   v_entry queue_entries%ROWTYPE;
-  v_result JSONB;
+  v_results JSONB := '[]'::JSONB;
+  i INTEGER := 0;
 BEGIN
-  -- Select random waiting entry with FOR UPDATE SKIP LOCKED to prevent race conditions
-  SELECT * INTO v_entry
-  FROM queue_entries
-  WHERE round_id = p_round_id
-    AND position = p_position
-    AND status = 'waiting'
-  ORDER BY random()
-  FOR UPDATE SKIP LOCKED
-  LIMIT 1;
-  
-  -- If no entry found
-  IF v_entry.id IS NULL THEN
+  IF p_count IS NULL OR p_count < 1 THEN
+    p_count := 1;
+  END IF;
+
+  FOR i IN 1..p_count LOOP
+    -- Select a random waiting entry and lock it to prevent concurrent claims
+    SELECT * INTO v_entry
+    FROM queue_entries
+    WHERE round_id = p_round_id
+      AND position = p_position
+      AND status = 'waiting'
+    ORDER BY random()
+    FOR UPDATE SKIP LOCKED
+    LIMIT 1;
+
+    IF v_entry.id IS NULL THEN
+      -- no more waiting entries
+      EXIT;
+    END IF;
+
+    -- Attempt to mark as called (immediately call the selected entry)
+    UPDATE queue_entries
+    SET
+      status = 'called',
+      called_at = NOW(),
+      called_by = auth.uid()
+    WHERE id = v_entry.id
+      AND status = 'waiting';
+
+    IF NOT FOUND THEN
+      -- another transaction claimed it; continue to next
+      CONTINUE;
+    END IF;
+
+    -- Log audit for this entry
+    INSERT INTO audit_logs (actor_id, action, entity_type, entity_id, metadata)
+    VALUES (
+      auth.uid(),
+      'random_queue',
+      'queue_entry',
+      v_entry.id,
+      jsonb_build_object(
+        'queue_number', v_entry.queue_number,
+        'position', v_entry.position,
+        'round_id', p_round_id
+      )
+    );
+
+    -- Append to results array (now called)
+    v_results := v_results || jsonb_build_array(
+      jsonb_build_object(
+        'id', v_entry.id,
+        'queue_number', v_entry.queue_number,
+        'player_name', v_entry.player_name,
+        'position', v_entry.position,
+        'status', 'called'
+      )
+    );
+  END LOOP;
+
+  IF jsonb_array_length(v_results) = 0 THEN
     RETURN jsonb_build_object(
       'success', false,
       'code', 'NO_WAITING_QUEUE',
       'message', 'ไม่มีคิวที่รออยู่ในขณะนี้'
     );
   END IF;
-  
-  -- Update status to selected atomically
-  UPDATE queue_entries
-  SET 
-    status = 'selected',
-    selected_at = NOW(),
-    selected_by = auth.uid()
-  WHERE id = v_entry.id
-  AND status = 'waiting';  -- Double check status hasn't changed
-  
-  -- Check if update was successful
-  IF NOT FOUND THEN
-    RETURN jsonb_build_object(
-      'success', false,
-      'code', 'QUEUE_ALREADY_CLAIMED',
-      'message', 'คิวนี้ถูกจัดการโดยเจ้าหน้าที่คนอื่นแล้ว'
-    );
-  END IF;
-  
-  -- Log audit
-  INSERT INTO audit_logs (actor_id, action, entity_type, entity_id, metadata)
-  VALUES (
-    auth.uid(),
-    'random_queue',
-    'queue_entry',
-    v_entry.id,
-    jsonb_build_object(
-      'queue_number', v_entry.queue_number,
-      'position', v_entry.position,
-      'round_id', p_round_id
-    )
-  );
-  
-  -- Return selected entry
+
   RETURN jsonb_build_object(
     'success', true,
-    'data', jsonb_build_object(
-      'id', v_entry.id,
-      'queue_number', v_entry.queue_number,
-      'player_name', v_entry.player_name,
-      'position', v_entry.position,
-      'status', v_entry.status
-    )
+    'data', v_results
   );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -175,9 +187,11 @@ DECLARE
   v_entry queue_entries%ROWTYPE;
 BEGIN
   -- Get current entry
+  -- Lock the selected row to prevent concurrent manual claims
   SELECT * INTO v_entry
   FROM queue_entries
-  WHERE id = p_entry_id;
+  WHERE id = p_entry_id
+  FOR UPDATE;
   
   IF v_entry.id IS NULL THEN
     RETURN jsonb_build_object(
@@ -287,7 +301,8 @@ BEGIN
     );
   END IF;
   
-  IF v_entry.status NOT IN ('waiting', 'selected') THEN
+  -- Allow manual selection of waiting, selected, or previously cancelled entries
+  IF v_entry.status NOT IN ('waiting', 'selected', 'cancelled') THEN
     RETURN jsonb_build_object(
       'success', false,
       'code', 'INVALID_STATUS',

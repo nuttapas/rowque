@@ -5,7 +5,7 @@ import type { QueueEntry, QueuePosition, QueueStatus } from '@/types';
 
 export const useQueueStore = defineStore('queue', () => {
   const entries = ref<QueueEntry[]>([]);
-  const selectedEntry = ref<QueueEntry | null>(null);
+  const selectedEntries = ref<QueueEntry[]>([]);
   const loading = ref(false);
 
   async function loadEntries(roundId: string, filters?: {
@@ -35,39 +35,29 @@ export const useQueueStore = defineStore('queue', () => {
     return result;
   }
 
-  async function randomSelect(roundId: string, position: QueuePosition) {
-    const result = await queueService.randomSelectQueue(roundId, position);
+  async function randomSelect(roundId: string, position: QueuePosition, count = 1) {
+    const result = await queueService.randomSelectQueue(roundId, position, count);
     if (result.success && result.data) {
-      selectedEntry.value = result.data as QueueEntry;
+      selectedEntries.value = selectedEntries.value.concat(result.data as QueueEntry[]);
       // Refresh entries
       await loadEntries(roundId);
     }
-    return result;
+    return result as any;
   }
 
-  async function confirmRandom(roundId: string) {
-    if (!selectedEntry.value) throw new Error('No selected entry');
-    const result = await queueService.confirmRandomQueue(selectedEntry.value.id);
-    if (result.success) {
-      selectedEntry.value = null;
-      await loadEntries(roundId);
-    }
-    return result;
-  }
-
-  async function rejectRandom(roundId: string) {
-    if (!selectedEntry.value) throw new Error('No selected entry');
-    const result = await queueService.rejectRandomQueue(selectedEntry.value.id);
-    if (result.success) {
-      selectedEntry.value = null;
-      await loadEntries(roundId);
-    }
-    return result;
-  }
+  // Confirm/Reject workflow deprecated in frontend; random/manual selection now immediately mark as called
 
   async function manualCall(entryId: string, roundId: string) {
     const result = await queueService.manualCallQueue(entryId);
     if (result.success) {
+      // fetch the updated entry and show as currently calling
+      const entry = await queueService.getQueueEntry(entryId);
+      if (entry) {
+        // ensure not duplicating
+        if (!selectedEntries.value.find(e => e.id === entry.id)) {
+          selectedEntries.value.push(entry);
+        }
+      }
       await loadEntries(roundId);
     }
     return result;
@@ -105,26 +95,26 @@ export const useQueueStore = defineStore('queue', () => {
       } else {
         entries.value.push(entry);
       }
-      // Update selected entry if it matches
-      if (selectedEntry.value?.id === entry.id) {
-        selectedEntry.value = entry;
+      // Update selected entries if any match
+      const selIndex = selectedEntries.value.findIndex(e => e.id === entry.id);
+      if (selIndex !== -1) {
+        selectedEntries.value[selIndex] = entry;
       }
     });
   }
 
   function clearSelected() {
-    selectedEntry.value = null;
+    selectedEntries.value = [];
   }
 
   return {
     entries,
-    selectedEntry,
+    selectedEntries,
     loading,
     loadEntries,
     registerQueue,
     randomSelect,
-    confirmRandom,
-    rejectRandom,
+    // confirmRandom/rejectRandom omitted — frontend uses called immediately
     manualCall,
     complete,
     markNoShow,

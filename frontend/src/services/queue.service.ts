@@ -21,15 +21,18 @@ export async function registerQueue(
 
 export async function randomSelectQueue(
   roundId: string,
-  position: QueuePosition
-): Promise<ApiResponse<QueueEntry>> {
+  position: QueuePosition,
+  count: number = 1
+): Promise<ApiResponse<QueueEntry[]>> {
   const { data, error } = await supabase.rpc('random_select_queue', {
     p_round_id: roundId,
-    p_position: position
+    p_position: position,
+    p_count: count
   } as any);
   
   if (error) throw error;
-  return data as unknown as ApiResponse<QueueEntry>;
+  // RPC returns { success: boolean, data: [ ... ] }
+  return data as unknown as ApiResponse<QueueEntry[]>;
 }
 
 export async function confirmRandomQueue(entryId: string): Promise<ApiResponse> {

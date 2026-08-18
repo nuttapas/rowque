@@ -18,7 +18,6 @@ const loading = ref(false);
 const randomResult = ref<QueueEntry | null>(null);
 const randomLoading = ref(false);
 const showRandomModal = ref(false);
-const confirmLoading = ref(false);
 
 const filteredEntries = computed(() => {
   let entries = queueStore.entries;
@@ -66,9 +65,9 @@ onMounted(async () => {
 async function handleRandom(position: QueuePosition) {
   randomLoading.value = true;
   try {
-    const result = await queueStore.randomSelect(roundId, position);
-    if (result.success && result.data) {
-      randomResult.value = result.data as QueueEntry;
+    const result = await queueStore.randomSelect(roundId, position, 1);
+    if (result.success && result.data && (result.data as any[]).length > 0) {
+      randomResult.value = (result.data as any[])[0] as QueueEntry;
       showRandomModal.value = true;
     } else {
       alert(result.message || ERROR_MESSAGES[result.code || 'NETWORK_ERROR']);
@@ -80,28 +79,7 @@ async function handleRandom(position: QueuePosition) {
   }
 }
 
-async function confirmRandom() {
-  confirmLoading.value = true;
-  try {
-    await queueStore.confirmRandom(roundId);
-    showRandomModal.value = false;
-    randomResult.value = null;
-  } catch (error: any) {
-    alert(error.message || 'เกิดข้อผิดพลาดในการยืนยัน');
-  } finally {
-    confirmLoading.value = false;
-  }
-}
-
-async function rejectRandom() {
-  try {
-    await queueStore.rejectRandom(roundId);
-    showRandomModal.value = false;
-    randomResult.value = null;
-  } catch (error: any) {
-    alert(error.message || 'เกิดข้อผิดพลาดในการยกเลิก');
-  }
-}
+// confirm/reject deprecated in frontend — random returns called entries immediately
 
 async function handleManualCall(entryId: string) {
   if (!confirm('ต้องการเรียกคิวนี้หรือไม่?')) return;
@@ -139,8 +117,24 @@ async function handleCancel(entryId: string) {
   }
 }
 
+function closeRandomModal() {
+  showRandomModal.value = false;
+  randomResult.value = null;
+}
+
+async function callRandomAndClose() {
+  if (!randomResult.value) return;
+  try {
+    // random selection already marks as called in backend; show modal allows direct complete if desired
+    // Here we simply close modal — optionally staff can Complete from list
+    closeRandomModal();
+  } catch (err: any) {
+    alert(err.message || 'เกิดข้อผิดพลาด');
+  }
+}
+
 function canCall(entry: QueueEntry) {
-  return entry.status === 'waiting' || entry.status === 'selected';
+  return entry.status === 'waiting' || entry.status === 'selected' || entry.status === 'cancelled';
 }
 
 function canComplete(entry: QueueEntry) {
@@ -366,22 +360,20 @@ function getPositionLabel(position: QueueEntry['position']) {
             </div>
           </div>
           
-          <div class="grid grid-cols-2 gap-4">
-            <button
-              @click="rejectRandom"
-              class="btn-secondary py-3"
-              :disabled="confirmLoading"
-            >
-              สุ่มใหม่
-            </button>
-            <button
-              @click="confirmRandom"
-              class="btn-primary py-3"
-              :disabled="confirmLoading"
-            >
-              {{ confirmLoading ? '...' : 'ยืนยัน' }}
-            </button>
-          </div>
+                  <div class="grid grid-cols-2 gap-4">
+                    <button
+                      @click="closeRandomModal"
+                      class="btn-secondary py-3"
+                    >
+                      ปิด
+                    </button>
+                    <button
+                      @click="callRandomAndClose"
+                      class="btn-primary py-3"
+                    >
+                      เรียกและปิด
+                    </button>
+                  </div>
         </div>
       </div>
     </div>
