@@ -36,6 +36,12 @@ const router = createRouter({
       meta: { requiresAuth: true, requiresStaff: true }
     },
     {
+      path: '/staff/queue-management',
+      name: 'staff-queue-management',
+      component: () => import('@/views/staff/QueueManagementView.vue'),
+      meta: { requiresAuth: true, requiresStaff: true }
+    },
+    {
       path: '/staff/round/:id',
       name: 'staff-round',
       component: () => import('@/views/staff/RoundManagementView.vue'),

@@ -29,6 +29,9 @@ onMounted(async () => {
               <router-link to="/display" class="text-gray-600 hover:text-gray-900">
                 จอแสดงผล
               </router-link>
+              <router-link v-if="authStore.isStaff" to="/staff/queue-management" class="text-gray-600 hover:text-gray-900">
+                จัดการคิว
+              </router-link>
             </div>
           </div>
           <div class="flex items-center space-x-4">
