@@ -75,13 +75,19 @@ async function manualCall(entryId: string, roundId: string) {
   return result;
 }
 
-  async function complete(entryId: string, roundId: string) {
-    const result = await queueService.completeQueue(entryId);
-    if (result.success) {
-      await loadEntries(roundId);
-    }
-    return result;
+async function complete(entryId: string, roundId: string) {
+  const result = await queueService.completeQueue(entryId);
+
+  if (result.success) {
+    selectedEntries.value = selectedEntries.value.filter(
+      e => e.id !== entryId
+    );
+
+    await loadEntries(roundId);
   }
+
+  return result;
+}
 
   async function markNoShow(entryId: string, roundId: string) {
     const result = await queueService.markNoShow(entryId);
@@ -91,13 +97,19 @@ async function manualCall(entryId: string, roundId: string) {
     return result;
   }
 
-  async function cancel(entryId: string, roundId: string) {
-    const result = await queueService.cancelQueue(entryId);
-    if (result.success) {
-      await loadEntries(roundId);
-    }
-    return result;
+async function cancel(entryId: string, roundId: string) {
+  const result = await queueService.cancelQueue(entryId);
+
+  if (result.success) {
+    selectedEntries.value = selectedEntries.value.filter(
+      e => e.id !== entryId
+    );
+
+    await loadEntries(roundId);
   }
+
+  return result;
+}
 
   function subscribeToEntries(roundId: string) {
     return queueService.subscribeToQueueEntries(roundId, (entry) => {
