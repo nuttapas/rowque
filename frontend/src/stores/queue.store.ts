@@ -120,10 +120,24 @@ async function cancel(entryId: string, roundId: string) {
         entries.value.push(entry);
       }
       // Update selected entries if any match
-      const selIndex = selectedEntries.value.findIndex(e => e.id === entry.id);
-      if (selIndex !== -1) {
-        selectedEntries.value[selIndex] = entry;
-      }
+// ถ้าคิวไม่ได้อยู่ในสถานะกำลังเรียกแล้ว ให้เอา Card ออก
+if (
+  entry.status === 'completed' ||
+  entry.status === 'cancelled' ||
+  entry.status === 'no_show'
+) {
+  selectedEntries.value = selectedEntries.value.filter(
+    e => e.id !== entry.id
+  );
+} else {
+  const selIndex = selectedEntries.value.findIndex(
+    e => e.id === entry.id
+  );
+
+  if (selIndex !== -1) {
+    selectedEntries.value[selIndex] = entry;
+  }
+}
     });
   }
 
