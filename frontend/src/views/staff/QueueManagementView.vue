@@ -67,12 +67,14 @@ async function closeAccepting() {
 async function createAndOpenRound() {
   const date = prompt('วันที่ของรอบ (YYYY-MM-DD)');
   if (!date) return;
+
   actionLoading.value = true;
+
   try {
     const newRound = await roundStore.createRound(date);
-    // reopen (set accepting entries) the newly created round
-    await roundStore.openRound(newRound.id);
+
     selectedRoundId.value = newRound.id;
+
     await roundStore.loadRounds();
     await roundStore.loadRoundWithStats(newRound.id);
     await queueStore.loadEntries(newRound.id);

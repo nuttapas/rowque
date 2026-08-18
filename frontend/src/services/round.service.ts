@@ -86,13 +86,13 @@ export async function createRound(eventDate: string) {
     .insert([
       {
         event_date: eventDate,
-        status: 'draft',
-        accepting_entries: false
+        status: 'open',
+        accepting_entries: true
       }
     ] as any)
     .select()
     .single();
-  
+
   if (error) throw error;
   return data as Round;
 }
