@@ -1,8 +1,11 @@
 import { supabase } from '@/utils/supabase';
 import type { Profile, UserRole } from '@/types';
+import type { Database } from '@/utils/database.types';
+import type { User, Session } from '@supabase/auth-js';
 
-export async function getCurrentUser(): Promise<{ user: any; profile: Profile | null } | null> {
-  const { data: { user } } = await supabase.auth.getUser();
+export async function getCurrentUser(): Promise<{ user: User | null; profile: Profile | null } | null> {
+  const res = await supabase.auth.getUser();
+  const user = res.data?.user ?? null;
   
   if (!user) return null;
   
@@ -36,12 +39,12 @@ export async function signUp(email: string, password: string, displayName: strin
   if (authData.user) {
     const { error: profileError } = await supabase
       .from('profiles')
-      .insert({
+      .insert<Database['public']['Tables']['profiles']['Insert']>([{
         id: authData.user.id,
         display_name: displayName,
         role
-      });
-    
+      }]);
+
     if (profileError) throw profileError;
   }
   
@@ -56,12 +59,12 @@ export async function signOut() {
 export async function updateUserRole(userId: string, role: UserRole) {
   const { error } = await supabase
     .from('profiles')
-    .update({ role })
+    .update<Database['public']['Tables']['profiles']['Update']>({ role })
     .eq('id', userId);
   
   if (error) throw error;
 }
 
-export async function onAuthStateChange(callback: (event: string, session: any) => void) {
+export async function onAuthStateChange(callback: (event: string, session: Session | null) => void) {
   return supabase.auth.onAuthStateChange(callback);
 }

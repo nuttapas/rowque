@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { useRoundStore } from '@/stores/round.store';
-import { POSITION_LABELS, ROUND_STATUS_LABELS, ROUND_STATUS_COLORS } from '@/constants';
+import { ROUND_STATUS_LABELS, ROUND_STATUS_COLORS } from '@/constants';
 import type { Round } from '@/types';
 
 const roundStore = useRoundStore();

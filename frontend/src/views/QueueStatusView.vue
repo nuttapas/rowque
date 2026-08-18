@@ -40,16 +40,16 @@ async function handleSearch() {
   }
 }
 
-function getPositionLabel(position: string) {
-  return POSITION_LABELS[position as 'support' | 'general'];
+function getPositionLabel(position: QueueEntry['position']) {
+  return POSITION_LABELS[position];
 }
 
-function getStatusLabel(status: string) {
-  return STATUS_LABELS[status as keyof typeof STATUS_LABELS];
+function getStatusLabel(status: QueueEntry['status']) {
+  return STATUS_LABELS[status];
 }
 
-function getStatusColor(status: string) {
-  return STATUS_COLORS[status as keyof typeof STATUS_COLORS];
+function getStatusColor(status: QueueEntry['status']) {
+  return STATUS_COLORS[status];
 }
 </script>
 

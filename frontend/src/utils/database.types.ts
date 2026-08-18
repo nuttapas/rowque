@@ -37,7 +37,7 @@ export interface Database {
           updated_at: string;
         };
         Insert: {
-          id: string;
+          id?: string;
           display_name: string;
           role?: user_role;
           created_at?: string;
@@ -50,6 +50,13 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: {
+          foreignKeyName: string;
+          columns: string[];
+          referencedRelation: string;
+          referencedColumns: string[];
+          isOneToOne?: boolean;
+        }[];
       };
       rounds: {
         Row: {
@@ -91,6 +98,13 @@ export interface Database {
           closed_at?: string | null;
           completed_at?: string | null;
         };
+        Relationships: {
+          foreignKeyName: string;
+          columns: string[];
+          referencedRelation: string;
+          referencedColumns: string[];
+          isOneToOne?: boolean;
+        }[];
       };
       queue_entries: {
         Row: {
@@ -147,6 +161,13 @@ export interface Database {
           completed_by?: string | null;
           notes?: string | null;
         };
+        Relationships: {
+          foreignKeyName: string;
+          columns: string[];
+          referencedRelation: string;
+          referencedColumns: string[];
+          isOneToOne?: boolean;
+        }[];
       };
       audit_logs: {
         Row: {
@@ -176,6 +197,13 @@ export interface Database {
           metadata?: Json;
           created_at?: string;
         };
+        Relationships: {
+          foreignKeyName: string;
+          columns: string[];
+          referencedRelation: string;
+          referencedColumns: string[];
+          isOneToOne?: boolean;
+        }[];
       };
     };
     Views: {};

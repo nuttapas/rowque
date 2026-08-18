@@ -3,7 +3,7 @@ import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useRoundStore } from '@/stores/round.store';
 import { ROUND_STATUS_LABELS, ROUND_STATUS_COLORS } from '@/constants';
-import type { Round } from '@/types';
+
 
 const router = useRouter();
 const roundStore = useRoundStore();

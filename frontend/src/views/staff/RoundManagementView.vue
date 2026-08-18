@@ -1,16 +1,14 @@
 <script setup lang="ts">
-import { onMounted, ref, computed, onUnmounted } from 'vue';
+import { onMounted, ref, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { useRoundStore } from '@/stores/round.store';
 import { useQueueStore } from '@/stores/queue.store';
-import { useAuthStore } from '@/stores/auth.store';
 import { POSITION_LABELS, STATUS_LABELS, STATUS_COLORS, ERROR_MESSAGES } from '@/constants';
 import type { QueuePosition, QueueEntry } from '@/types';
 
 const route = useRoute();
 const roundStore = useRoundStore();
 const queueStore = useQueueStore();
-const authStore = useAuthStore();
 
 const roundId = route.params.id as string;
 const selectedPosition = ref<QueuePosition | 'all'>('all');
@@ -149,16 +147,16 @@ function canComplete(entry: QueueEntry) {
   return entry.status === 'called' || entry.status === 'serving';
 }
 
-function getStatusLabel(status: string) {
-  return STATUS_LABELS[status as keyof typeof STATUS_LABELS];
+function getStatusLabel(status: QueueEntry['status']) {
+  return STATUS_LABELS[status];
 }
 
-function getStatusColor(status: string) {
-  return STATUS_COLORS[status as keyof typeof STATUS_COLORS];
+function getStatusColor(status: QueueEntry['status']) {
+  return STATUS_COLORS[status];
 }
 
-function getPositionLabel(position: string) {
-  return POSITION_LABELS[position as 'support' | 'general'];
+function getPositionLabel(position: QueueEntry['position']) {
+  return POSITION_LABELS[position];
 }
 </script>
 

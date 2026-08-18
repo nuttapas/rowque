@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { onMounted, ref, computed } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 import { useRoundStore } from '@/stores/round.store';
 import { useQueueStore } from '@/stores/queue.store';
-import { POSITION_LABELS, STATUS_LABELS, STATUS_COLORS } from '@/constants';
+import { POSITION_LABELS, STATUS_LABELS, STATUS_COLORS, ROUND_STATUS_LABELS, ROUND_STATUS_COLORS } from '@/constants';
 import type { QueuePosition, QueueEntry } from '@/types';
 
 const route = useRoute();
-const router = useRouter();
 const roundStore = useRoundStore();
 const queueStore = useQueueStore();
 
@@ -151,16 +150,16 @@ function canComplete(entry: QueueEntry) {
   return entry.status === 'called' || entry.status === 'serving';
 }
 
-function getStatusLabel(status: string) {
-  return STATUS_LABELS[status as keyof typeof STATUS_LABELS];
+function getStatusLabel(status: QueueEntry['status']) {
+  return STATUS_LABELS[status];
 }
 
-function getStatusColor(status: string) {
-  return STATUS_COLORS[status as keyof typeof STATUS_COLORS];
+function getStatusColor(status: QueueEntry['status']) {
+  return STATUS_COLORS[status];
 }
 
-function getPositionLabel(position: string) {
-  return POSITION_LABELS[position as 'support' | 'general'];
+function getPositionLabel(position: QueueEntry['position']) {
+  return POSITION_LABELS[position];
 }
 </script>
 
@@ -408,14 +407,3 @@ function getPositionLabel(position: string) {
     </div>
   </div>
 </template>
-
-<script lang="ts">
-import { ROUND_STATUS_COLORS } from '@/constants';
-export default {
-  computed: {
-    ROUND_STATUS_COLORS() {
-      return ROUND_STATUS_COLORS;
-    }
-  }
-};
-</script>

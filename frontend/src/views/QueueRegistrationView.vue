@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { onMounted, ref, computed } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 import { useRoundStore } from '@/stores/round.store';
 import { useQueueStore } from '@/stores/queue.store';
 import { POSITION_LABELS } from '@/constants';
 import type { QueuePosition } from '@/types';
 
 const route = useRoute();
-const router = useRouter();
 const roundStore = useRoundStore();
 const queueStore = useQueueStore();
 
@@ -17,7 +16,7 @@ const contact = ref('');
 const selectedPosition = ref<QueuePosition>('general');
 const loading = ref(false);
 const error = ref<string | null>(null);
-const success = ref<any>(null);
+const success = ref<{ queueNumber: string; round?: import('@/types').Round; position?: import('@/types').QueuePosition } | null>(null);
 
 const selectedRound = computed(() => 
   roundStore.rounds.find(r => r.id === selectedRoundId.value)
@@ -107,7 +106,7 @@ function resetForm() {
             <div class="font-bold text-gray-900">#{{ success.round?.round_number }}</div>
             
             <div class="text-gray-600">Position:</div>
-            <div class="font-bold text-gray-900">{{ POSITION_LABELS[success.position] }}</div>
+            <div class="font-bold text-gray-900">{{ POSITION_LABELS[success.position ?? 'general'] }}</div>
             
             <div class="text-gray-600">สถานะ:</div>
             <div class="font-bold text-yellow-600">กำลังรอ</div>

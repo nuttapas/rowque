@@ -1,10 +1,6 @@
 <script setup lang="ts">
-import { ref } from 'vue';
 // TODO: Implement staff management
 // This will require additional backend functions for managing profiles
-
-const staff = ref([]);
-const loading = ref(false);
 
 // Placeholder - will be implemented with proper backend functions
 </script>

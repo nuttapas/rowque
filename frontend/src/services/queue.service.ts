@@ -1,5 +1,6 @@
 import { supabase } from '@/utils/supabase';
 import type { QueueEntry, QueuePosition, ApiResponse } from '@/types';
+import type { Database } from '@/utils/database.types';
 
 export async function registerQueue(
   roundId: string,
@@ -12,7 +13,7 @@ export async function registerQueue(
     p_player_name: playerName,
     p_contact: contact,
     p_position: position
-  });
+  } as any);
   
   if (error) throw error;
   return { id: data } as { id: string };
@@ -25,64 +26,64 @@ export async function randomSelectQueue(
   const { data, error } = await supabase.rpc('random_select_queue', {
     p_round_id: roundId,
     p_position: position
-  });
+  } as any);
   
   if (error) throw error;
-  return data as ApiResponse<QueueEntry>;
+  return data as unknown as ApiResponse<QueueEntry>;
 }
 
 export async function confirmRandomQueue(entryId: string): Promise<ApiResponse> {
   const { data, error } = await supabase.rpc('confirm_random_queue', {
     p_entry_id: entryId
-  });
+  } as any);
   
   if (error) throw error;
-  return data as ApiResponse;
+  return data as unknown as ApiResponse;
 }
 
 export async function rejectRandomQueue(entryId: string): Promise<ApiResponse> {
   const { data, error } = await supabase.rpc('reject_random_queue', {
     p_entry_id: entryId
-  });
+  } as any);
   
   if (error) throw error;
-  return data as ApiResponse;
+  return data as unknown as ApiResponse;
 }
 
 export async function manualCallQueue(entryId: string): Promise<ApiResponse> {
   const { data, error } = await supabase.rpc('manual_call_queue', {
     p_entry_id: entryId
-  });
+  } as any);
   
   if (error) throw error;
-  return data as ApiResponse;
+  return data as unknown as ApiResponse;
 }
 
 export async function completeQueue(entryId: string): Promise<ApiResponse> {
   const { data, error } = await supabase.rpc('complete_queue', {
     p_entry_id: entryId
-  });
+  } as any);
   
   if (error) throw error;
-  return data as ApiResponse;
+  return data as unknown as ApiResponse;
 }
 
 export async function markNoShow(entryId: string): Promise<ApiResponse> {
   const { data, error } = await supabase.rpc('mark_no_show', {
     p_entry_id: entryId
-  });
+  } as any);
   
   if (error) throw error;
-  return data as ApiResponse;
+  return data as unknown as ApiResponse;
 }
 
 export async function cancelQueue(entryId: string): Promise<ApiResponse> {
   const { data, error } = await supabase.rpc('cancel_queue', {
     p_entry_id: entryId
-  });
+  } as any);
   
   if (error) throw error;
-  return data as ApiResponse;
+  return data as unknown as ApiResponse;
 }
 
 export async function getQueueEntries(roundId: string, filters?: {
@@ -162,11 +163,11 @@ export async function getQueueByContact(contact: string, roundId?: string): Prom
 export async function updateQueueNotes(entryId: string, notes: string) {
   const { data, error } = await supabase
     .from('queue_entries')
-    .update({ notes, updated_at: new Date().toISOString() })
+    .update<Database['public']['Tables']['queue_entries']['Update']>({ notes })
     .eq('id', entryId)
     .select()
     .single();
-  
+
   if (error) throw error;
   return data as QueueEntry;
 }

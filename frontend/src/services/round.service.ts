@@ -42,7 +42,7 @@ export async function getRoundWithStats(roundId: string): Promise<RoundWithStats
   const { data: entries } = await supabase
     .from('queue_entries')
     .select('position, status')
-    .eq('round_id', roundId);
+    .eq('round_id', roundId) as any;
   
   const stats: any = {
     support: {
@@ -68,25 +68,28 @@ export async function getRoundWithStats(roundId: string): Promise<RoundWithStats
   };
   
   if (entries) {
-    for (const entry of entries) {
+    for (const entry of entries as any[]) {
       const pos = entry.position as 'support' | 'general';
       const status = entry.status as keyof QueueStats;
       stats[pos].total++;
       stats[pos][status]++;
     }
   }
-  
-  return { ...round, stats } as RoundWithStats;
+
+  const roundObj = round as any;
+  return { ...roundObj, stats } as RoundWithStats;
 }
 
 export async function createRound(eventDate: string) {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('rounds')
-    .insert({
-      event_date: eventDate,
-      status: 'draft',
-      accepting_entries: false
-    })
+    .insert([
+      {
+        event_date: eventDate,
+        status: 'draft',
+        accepting_entries: false
+      }
+    ] as any)
     .select()
     .single();
   
@@ -95,12 +98,12 @@ export async function createRound(eventDate: string) {
 }
 
 export async function updateRound(roundId: string, updates: Partial<Round>) {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('rounds')
     .update({
       ...updates,
       updated_at: new Date().toISOString()
-    })
+    } as any)
     .eq('id', roundId)
     .select()
     .single();
@@ -113,19 +116,19 @@ export async function openRound(roundId: string) {
   const { data, error } = await supabase.rpc('reopen_round', {
     p_round_id: roundId,
     p_reason: 'เปิดรอบใหม่'
-  });
+  } as any);
   
   if (error) throw error;
   return data;
 }
 
 export async function closeRoundAccepting(roundId: string) {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('rounds')
     .update({
       accepting_entries: false,
       updated_at: new Date().toISOString()
-    })
+    } as any)
     .eq('id', roundId)
     .select()
     .single();
@@ -138,21 +141,21 @@ export async function reopenRound(roundId: string, reason?: string) {
   const { data, error } = await supabase.rpc('reopen_round', {
     p_round_id: roundId,
     p_reason: reason
-  });
+  } as any);
   
   if (error) throw error;
   return data;
 }
 
 export async function completeRound(roundId: string) {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('rounds')
     .update({
       status: 'completed',
       accepting_entries: false,
       completed_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
-    })
+    } as any)
     .eq('id', roundId)
     .select()
     .single();
@@ -162,13 +165,13 @@ export async function completeRound(roundId: string) {
 }
 
 export async function cancelRound(roundId: string) {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('rounds')
     .update({
       status: 'cancelled',
       accepting_entries: false,
       updated_at: new Date().toISOString()
-    })
+    } as any)
     .eq('id', roundId)
     .select()
     .single();
