@@ -50,26 +50,27 @@ export const useQueueStore = defineStore('queue', () => {
 async function manualCall(entryId: string, roundId: string) {
   const result = await queueService.manualCallQueue(entryId);
 
-  if (!result.success) {
-    return result;
-  }
+  if (result.success) {
+    // หา entry จากรายการปัจจุบัน
+    const entry = entries.value.find(e => e.id === entryId);
 
-  // ดึงข้อมูลล่าสุดหลังจาก DB เปลี่ยนเป็น called
-  const entry = await queueService.getQueueEntry(entryId);
-
-  if (entry) {
-    selectedEntries.value = [
-      ...selectedEntries.value.filter(e => e.id !== entry.id),
-      {
+    if (entry) {
+      const calledEntry: QueueEntry = {
         ...entry,
         status: 'called',
-        called_at: entry.called_at || new Date().toISOString()
-      }
-    ];
-  }
+        called_at: new Date().toISOString(),
+      };
 
-  // refresh รายการคิว
-  await loadEntries(roundId);
+      // เอาของเก่าออกก่อน ป้องกัน card ซ้ำ
+      selectedEntries.value = [
+        ...selectedEntries.value.filter(e => e.id !== entryId),
+        calledEntry,
+      ];
+    }
+
+    // โหลดข้อมูลล่าสุด
+    await loadEntries(roundId);
+  }
 
   return result;
 }
