@@ -47,21 +47,32 @@ export const useQueueStore = defineStore('queue', () => {
 
   // Confirm/Reject workflow deprecated in frontend; random/manual selection now immediately mark as called
 
-  async function manualCall(entryId: string, roundId: string) {
-    const result = await queueService.manualCallQueue(entryId);
-    if (result.success) {
-      // fetch the updated entry and show as currently calling
-      const entry = await queueService.getQueueEntry(entryId);
-      if (entry) {
-        // ensure not duplicating
-        if (!selectedEntries.value.find(e => e.id === entry.id)) {
-          selectedEntries.value.push(entry);
-        }
-      }
-      await loadEntries(roundId);
-    }
+async function manualCall(entryId: string, roundId: string) {
+  const result = await queueService.manualCallQueue(entryId);
+
+  if (!result.success) {
     return result;
   }
+
+  // ดึงข้อมูลล่าสุดหลังจาก DB เปลี่ยนเป็น called
+  const entry = await queueService.getQueueEntry(entryId);
+
+  if (entry) {
+    selectedEntries.value = [
+      ...selectedEntries.value.filter(e => e.id !== entry.id),
+      {
+        ...entry,
+        status: 'called',
+        called_at: entry.called_at || new Date().toISOString()
+      }
+    ];
+  }
+
+  // refresh รายการคิว
+  await loadEntries(roundId);
+
+  return result;
+}
 
   async function complete(entryId: string, roundId: string) {
     const result = await queueService.completeQueue(entryId);

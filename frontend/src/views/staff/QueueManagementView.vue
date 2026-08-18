@@ -268,15 +268,39 @@ function getStatusColor(status: QueueEntry['status']) {
         <div class="mb-4">
           <h3 class="text-lg font-medium">กำลังเรียก (ผลการสุ่ม/เลือก)</h3>
           <div class="flex space-x-4 mt-3 overflow-x-auto">
-            <div v-for="entry in selectedEntries" :key="entry.id" class="card p-4 w-72">
-              <div class="text-xl font-bold text-center">{{ entry.queue_number }}</div>
-              <div class="text-center mt-2">{{ entry.player_name }}</div>
-              <div class="text-center mt-1 text-sm">{{ entry.position }}</div>
-              <div class="flex justify-between mt-4">
-                <button @click="handleComplete(entry.id)" class="btn-primary">✅ เสร็จสิ้น</button>
-                <button @click="handleCancel(entry.id)" class="btn-danger">❌ ยกเลิก</button>
-              </div>
-            </div>
+<div
+  v-for="entry in selectedEntries"
+  :key="entry.id"
+  class="bg-white rounded-xl shadow-lg p-6"
+>
+  <div class="text-3xl font-bold">
+    {{ entry.queue_number }}
+  </div>
+
+  <div class="text-xl">
+    {{ entry.player_name }}
+  </div>
+
+  <div class="text-sm text-gray-500">
+    {{ entry.position === 'support' ? 'Support' : 'General' }}
+  </div>
+
+  <div class="flex gap-3 mt-4">
+    <button
+      @click="handleComplete(entry.id)"
+      class="bg-green-600 text-white px-4 py-2 rounded-lg"
+    >
+      ✅ เสร็จสิ้น
+    </button>
+
+    <button
+      @click="handleCancel(entry.id)"
+      class="bg-red-600 text-white px-4 py-2 rounded-lg"
+    >
+      ❌ ยกเลิก
+    </button>
+  </div>
+</div>
           </div>
         </div>
       </div>

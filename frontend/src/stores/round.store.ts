@@ -12,9 +12,9 @@ export const useRoundStore = defineStore('round', () => {
     rounds.value.filter(r => r.status === 'open' || r.status === 'processing')
   );
 
-  const acceptingRounds = computed(() =>
-    rounds.value.filter(r => r.accepting_entries && (r.status === 'open' || r.status === 'processing'))
-  );
+const acceptingRounds = computed(() =>
+  rounds.value.filter(r => r.accepting_entries)
+);
 
   async function loadRounds(filters?: { status?: Round['status'] }) {
     loading.value = true;
