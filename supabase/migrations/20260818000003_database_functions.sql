@@ -16,6 +16,15 @@ BEGIN
   END IF;
   
   -- Get next number atomically with lock
+  -- Acquire an advisory lock scoped to the round and position to serialize
+  -- queue number generation. Avoid using FOR UPDATE together with aggregate
+  -- functions; instead use an advisory lock to prevent concurrent generators
+  -- from producing the same number.
+  PERFORM pg_advisory_xact_lock(
+    hashtext(p_round_id::text),
+    CASE WHEN p_position = 'support' THEN 1 ELSE 2 END
+  );
+
   SELECT COALESCE(
     MAX(
       CAST(
@@ -26,8 +35,7 @@ BEGIN
   FROM queue_entries
   WHERE round_id = p_round_id
     AND position = p_position
-    AND queue_number LIKE v_prefix || '%'
-  FOR UPDATE;
+    AND queue_number LIKE v_prefix || '%';
   
   -- Format queue number with leading zeros
   v_queue_number := v_prefix || LPAD(v_next_num::TEXT, 3, '0');
