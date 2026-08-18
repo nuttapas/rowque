@@ -143,7 +143,11 @@ async function handleCancel(entryId: string) {
 }
 
 function canCall(entry: QueueEntry) {
-  return entry.status === 'waiting' || entry.status === 'selected';
+  return (
+    entry.status === 'waiting' ||
+    entry.status === 'selected' ||
+    entry.status === 'cancelled'
+  );
 }
 
 function canComplete(entry: QueueEntry) {
